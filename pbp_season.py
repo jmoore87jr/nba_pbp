@@ -34,7 +34,7 @@ def team_to_abbr(year):
                 'DET', 'ATL', 'CLE', 'LAL', 'LAC', 'DEN',
                 'HOU', 'OKC', 'UTA', 'DAL', 'POR', 'MEM',
                 'PHO', 'SAS', 'SAC', 'NOP', 'MIN', 'GSW',
-                'NJN', 'NOH']
+                'NJN', 'NOH', 'CHA']
     team_names = ['Milwaukee Bucks', 'Toronto Raptors', 'Boston Celtics',
                 'Indiana Pacers', 'Miami Heat', 'Philadelphia 76ers',
                 'Brooklyn Nets', 'Orlando Magic', 'Charlotte Hornets',
@@ -45,15 +45,11 @@ def team_to_abbr(year):
                 'Dallas Mavericks', 'Portland Trail Blazers', 'Memphis Grizzlies',
                 'Phoenix Suns', 'San Antonio Spurs', 'Sacramento Kings',
                 'New Orleans Pelicans', 'Minnesota Timberwolves', 'Golden State Warriors',
-                'New Jersey Nets', 'New Orleans Hornets']
+                'New Jersey Nets', 'New Orleans Hornets', 'Charlotte Bobcats']
     
     d = {}
     for name,abbr in zip(team_names, team_abbrs):
         d[name] = abbr
-    
-    # change CHO up to 2014
-    if year in ['2011', '2012', '2013']:
-        d['Charlotte Bobcats'] = 'CHO'
 
     return d
 
@@ -124,9 +120,9 @@ def save_to_rds(df, month):
             # insert data and commit to database
             df.to_sql('pbp', con=engine, if_exists='append', chunksize=1000)
             conn.commit()
-            print(f"Games from {month} saved to database")
+            print(f"Games from {month.title()} saved to database")
         except:
-            print(f"Error saving {month} to database")
+            print(f"Error saving {month.title()} to database")
 
         # close connection
         conn.close()
@@ -138,6 +134,7 @@ def save_to_rds(df, month):
 
 if __name__ == "__main__":
     # loop through each game in each month and store in database
+    # TODO: add back 2011; testing
     years = ['2011', '2012', '2013', '2014',
              '2015', '2016', '2017', '2018', 
              '2019', '2020', '2021']
@@ -151,11 +148,11 @@ if __name__ == "__main__":
             try:
                 gss = get_season_schedule(year, month, playoffs)
             except:
-                print(f"Page not found for {month} in {season}")
+                print(f"Page not found for {month.title()} in {season}")
                 continue
             schedule = gss[0]
             playoffs = gss[1] # makes playoffs = True if the last month ended with a playoff game
-            print(f"Importing games for {month} {season}")
+            print(f"Importing games for {month.title()} {year}")
             df_month = pd.DataFrame()
             for i,row in schedule.iterrows(): 
                 try:

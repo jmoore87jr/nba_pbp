@@ -1,0 +1,12 @@
+.vscode/
+__pycache__/
+dunks.py 
+game_flow_charts/
+game_summaries/
+test_closing_line.py 
+test_email.py 
+test_highlights.py 
+test_json.py 
+test_live_pbp.py 
+test_rds.py 
+twitter_test.py 

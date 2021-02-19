@@ -6,17 +6,25 @@ from datetime import datetime, timedelta
 from basketball_reference_scraper.pbp import get_pbp
 import os
 from sqlalchemy import create_engine
-import psycopg2
+#import psycopg2
+# TODO: Amazon RDS t2.micro would not import ~20k-row tables, but it could import game-by-game. trying local sqlite
+import sqlite3
 
 # use basketball-reference-scraper to put NBA play-by-play data into Amazon RDS postgres database
 
+"""
 DATABASE_ENDPOINT = 'airflow-database.ctuo1jcj04vs.us-east-2.rds.amazonaws.com'
 PORT = '5432'
 DATABASE_NAME = 'myDatabase'
 USERNAME = 'jmoore87jr'
 PASSWORD = 'johnny01'
 
-# 2013 - new 
+DATABASE_ENDPOINT = 'nba-data2.ctuo1jcj04vs.us-east-2.rds.amazonaws.com'
+PORT = '5432'
+DATABASE_NAME = 'myDatabase'
+USERNAME = 'postgres'
+PASSWORD = 'OgPmSd5x'
+"""
 
 def team_to_abbr(year):
     """returns dictionary of full name: abbreviation"""
@@ -118,7 +126,7 @@ def save_to_rds(df, month):
 
         try:
             # insert data and commit to database
-            df.to_sql('pbp', con=engine, if_exists='append', chunksize=1000)
+            df.to_sql('pbp', con=engine, if_exists='append', chunksize=25000)
             conn.commit()
             print(f"Games from {month.title()} saved to database")
         except:
@@ -130,6 +138,20 @@ def save_to_rds(df, month):
 
     except psycopg2.OperationalError as e:
         print(e)
+
+def save_to_sqlite(df, month):
+    try:
+        db = sqlite3.connect('NBAdraft/save_to_db/nba.db')
+        cursor = db.cursor()
+        engine = create_engine('sqlite:///NBAdraft/save_to_db/nba.db')
+        df.to_sql('pbp', con=engine, if_exists='append', chunksize=25000)
+        db.commit()
+        print(f"Games from {month.title()} saved to database")
+    except IOError as e:
+        print(e)
+    finally:
+        cursor.close()
+        db.close()
 
 
 if __name__ == "__main__":
@@ -157,6 +179,8 @@ if __name__ == "__main__":
             for i,row in schedule.iterrows(): 
                 try:
                     df = scrape_and_clean_game(row.Date2, row.Visitor, row.Home, row.Game_Type, year)
+                    # TODO: saving every game to db because month is not working
+                    #save_to_rds(df, "testing_ind_games")
                     if df_month.empty:
                         df_month = df
                     else:
@@ -169,6 +193,8 @@ if __name__ == "__main__":
                 time.sleep(3)
 
             # add game to database, creating one if it doesn't exist
-            save_to_rds(df_month, month)
+            # TODO: not working for full month. maybe problem with my RDS instance size
+            #save_to_rds(df_month, month)
+            save_to_sqlite(df_month, month)
 
     print("Finished")

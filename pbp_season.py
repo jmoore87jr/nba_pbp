@@ -124,9 +124,9 @@ def save_to_rds(df, month):
             # insert data and commit to database
             df.to_sql('pbp', con=engine, if_exists='append', chunksize=1000)
             conn.commit()
-            print(f"Games from {month} saved to database.")
+            print(f"Games from {month} saved to database")
         except:
-            print(f"Error saving {month} to database.")
+            print(f"Error saving {month} to database")
 
         # close connection
         conn.close()
@@ -147,14 +147,15 @@ if __name__ == "__main__":
     playoffs = False
     for year in years:
         for month in months:
+            season = str(int(year) - 1) + "-" + year
             try:
                 gss = get_season_schedule(year, month, playoffs)
             except:
-                print(f"url for {month} in {year} not found.")
+                print(f"Page not found for {month} in {season}")
                 continue
             schedule = gss[0]
             playoffs = gss[1] # makes playoffs = True if the last month ended with a playoff game
-            print("Importing games for {}".format(month))
+            print(f"Importing games for {month} {season}")
             df_month = pd.DataFrame()
             for i,row in schedule.iterrows(): 
                 try:
@@ -163,15 +164,14 @@ if __name__ == "__main__":
                         df_month = df
                     else:
                         df_month = pd.concat([df_month, df])
-                    print("{} @ {} on {} added.".format(row.Visitor, row.Home, row.Date2))
+                    print(f"{row.Visitor} @ {row.Home} on {row.Date2} added".format(row.Visitor, row.Home, row.Date2))
                 except:
-                    print("No more games to import this month.")
+                    print("No more games to import this month")
                     break
                 # sleep; time on basketballreference.com/robots is 3 seconds
-                print("Sleeping...")
                 time.sleep(3)
 
             # add game to database, creating one if it doesn't exist
             save_to_rds(df_month, month)
 
-    print("Finished.")
+    print("Finished")

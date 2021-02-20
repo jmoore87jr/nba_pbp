@@ -11,6 +11,10 @@ import sqlite3
 # TODO: Amazon RDS t2.micro would not import ~20k-row tables, but it could import game-by-game. trying local sqlite
 # TODO: create separate credentials.py file for github
 # TODO: put team abbreviations/names in json file and import to dict
+# TODO: get player season box summaries (season columns must be same format for joins)
+# TODO: get box scores for each game as well
+# TODO: write a script to transform names; either make pbp names full, or shorten box names to e.g. 'T. Young'
+    # must account for S. Curry and L. Ball in these
 
 
 # use basketball-reference-scraper to put NBA play-by-play data into Amazon RDS postgres database
@@ -166,8 +170,8 @@ if __name__ == "__main__":
     months = ['october', 'october-2019', 'november', 'december', 'january', 
               'february', 'march', 'april', 'may', 'june', 'july', 'august',
               'september', 'october-2020']
-    playoffs = False
     for year in years:
+        playoffs = False
         for month in months:
             season = str(int(year) - 1) + "-" + year
             try:

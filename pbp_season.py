@@ -6,9 +6,12 @@ from datetime import datetime, timedelta
 from basketball_reference_scraper.pbp import get_pbp
 import os
 from sqlalchemy import create_engine
+import sqlite3
 #import psycopg2
 # TODO: Amazon RDS t2.micro would not import ~20k-row tables, but it could import game-by-game. trying local sqlite
-import sqlite3
+# TODO: create separate credentials.py file for github
+# TODO: put team abbreviations/names in json file and import to dict
+
 
 # use basketball-reference-scraper to put NBA play-by-play data into Amazon RDS postgres database
 
@@ -26,7 +29,7 @@ USERNAME = 'postgres'
 PASSWORD = 'OgPmSd5x'
 """
 
-def team_to_abbr(year):
+def team_to_abbr():
     """returns dictionary of full name: abbreviation"""
     """
     new jersey nets: 2010-11 -- 2011-12
@@ -62,7 +65,7 @@ def team_to_abbr(year):
     return d
 
 def get_season_schedule(year, urltail, playoffs): # urltail is month at the end of url
-    team_dict = team_to_abbr(year)
+    team_dict = team_to_abbr()
     dfs = pd.read_html('https://www.basketball-reference.com/leagues/NBA_{}_games-{}.html'.format(year, urltail))
     df = dfs[0][['Date', 'Visitor/Neutral', 'Home/Neutral']]
     
@@ -99,12 +102,12 @@ def scrape_and_clean_game(date, away, home, playoffs, year):
                 'home_action', 'away_score', 'home_score']
     df.insert(0, 'home_team', [ home for i in range(len(df.index)) ])
     df.insert(0, 'away_team', [ away for i in range(len(df.index)) ])
-    gameId = (date+away+home).replace('-', '') 
     df.insert(0, 'playoffs', [ playoffs for i in range(len(df.index)) ])
     df.insert(0, 'month', [ date[5:7] for i in range(len(df.index)) ])
     season = str(int(year) - 1) + "-" + year
     df.insert(0, 'season', [ season for i in range(len(df.index)) ])
     df.insert(0, 'date', [ date for i in range(len(df.index)) ])
+    gameId = (date+away+home).replace('-', '') 
     df.insert(0, 'gameId', [ gameId for i in range(len(df.index)) ])
 
     return df 

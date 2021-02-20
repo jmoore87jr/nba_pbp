@@ -146,12 +146,12 @@ def save_to_rds(df, month):
     except psycopg2.OperationalError as e:
         print(e)
 
-def save_to_sqlite(df, month):
+def save_to_sqlite(df, month, season):
     try:
         db = sqlite3.connect('NBAdraft/save_to_db/nba.db')
         cursor = db.cursor()
         engine = create_engine('sqlite:///NBAdraft/save_to_db/nba.db')
-        df.to_sql('pbp', con=engine, if_exists='append', chunksize=25000)
+        df.to_sql('pbp_{}'.format(season), con=engine, if_exists='append', chunksize=25000)
         db.commit()
         print(f"Games from {month.title()} saved to database")
     except IOError as e:
@@ -202,6 +202,6 @@ if __name__ == "__main__":
             # add game to database, creating one if it doesn't exist
             # TODO: not working for full month. maybe problem with my RDS instance size
             #save_to_rds(df_month, month)
-            save_to_sqlite(df_month, month)
+            save_to_sqlite(df_month, month, season)
 
     print("Finished")

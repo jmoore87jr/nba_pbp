@@ -10,3 +10,4 @@ test_json.py
 test_live_pbp.py 
 test_rds.py 
 twitter_test.py 
+nba.db

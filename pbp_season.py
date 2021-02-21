@@ -8,13 +8,13 @@ import os
 from sqlalchemy import create_engine
 import sqlite3
 #import psycopg2
+
 # TODO: Amazon RDS t2.micro would not import ~20k-row tables, but it could import game-by-game. trying local sqlite
 # TODO: create separate credentials.py file for github
-# TODO: put team abbreviations/names in json file and import to dict
-# TODO: get player season box summaries (season columns must be same format for joins)
-# TODO: get box scores for each game as well
-# TODO: write a script to transform names; either make pbp names full, or shorten box names to e.g. 'T. Young'
-    # must account for S. Curry and L. Ball in these
+# TODO: team abbr json
+# TODO: player name json (to change T. Young to Trae Young in pbp db)
+# TODO: player season stats including advanced (BPM, eFG%, etc)
+# TODO: game box scores
 
 
 # use basketball-reference-scraper to put NBA play-by-play data into Amazon RDS postgres database

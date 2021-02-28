@@ -6,6 +6,9 @@ from basketball_reference_scraper.pbp import get_pbp
 import os
 from sqlalchemy import create_engine
 import psycopg2
+import sqlite3
+
+### RUN FROM HOME DIRECTORY ###
 
 # use basketball-reference-scraper to put NBA play-by-play data into a database called 'playbyplay.db'
 # for use with airflow: sqlite:////home/jmoore87jr/airflow/airflow.db
@@ -61,22 +64,28 @@ def get_season_schedule(urltail): # urltail is month at the end of url
     
     return df[['Date2', 'Visitor', 'Home']]
 
-def scrape_and_clean_game(date, away, home):
+def scrape_and_clean_game(date, away, home, year):
     # scrape game
     df = get_pbp(date, away, home)
 
-    # add date + Id and change column names
+    # playoffs?
+    if (int(date[5:7]) >= 5) and (int(date[8:10]) >= 22): # playoff start date; TODO: change to auto detect
+        playoffs = "Playoffs"
+    else:
+        playoffs = "Regular"
+
+    # change colnames and add new columns
     df.columns = ['quarter', 'time_remaining', 'away_action',
                 'home_action', 'away_score', 'home_score']
     df.insert(0, 'home_team', [ home for i in range(len(df.index)) ])
     df.insert(0, 'away_team', [ away for i in range(len(df.index)) ])
-    gameId = (date[5:]+away+home).replace('-', '') 
-    df.insert(0, 'gameId', [ gameId for i in range(len(df.index)) ])
+    df.insert(0, 'playoffs', [ playoffs for i in range(len(df.index)) ])
+    df.insert(0, 'month', [ date[5:7] for i in range(len(df.index)) ])
+    season = str(int(year) - 1) + "-" + year
+    df.insert(0, 'season', [ season for i in range(len(df.index)) ])
     df.insert(0, 'date', [ date for i in range(len(df.index)) ])
-
-    print(df.shape)
-    print(df.columns)
-    print(df.head(10))
+    gameId = (date+away+home).replace('-', '') 
+    df.insert(0, 'gameId', [ gameId for i in range(len(df.index)) ])
 
     return df 
 
@@ -112,18 +121,34 @@ def save_to_rds(df):
     except psycopg2.OperationalError as e:
         print(e)
 
+def save_to_sqlite(df, season):
+    try:
+        db = sqlite3.connect('NBAdraft/save_to_db/nba.db')
+        cursor = db.cursor()
+        engine = create_engine('sqlite:///NBAdraft/save_to_db/nba.db')
+        df.to_sql('pbp_{}'.format(season), con=engine, if_exists='append', chunksize=25000)
+        db.commit()
+        print("Added {} @ {} on {} to database.".format(row.Visitor, row.Home, row.Date2))
+    except IOError as e:
+        print(e)
+    finally:
+        cursor.close()
+        db.close()
+
 if __name__ == "__main__":
     # loop through each game in each month and store in database
+    year = '2021'
+    season = '2020-2021'
     yest_month = (datetime.now() - timedelta(1)).strftime('%B').lower()
     schedule = get_season_schedule(yest_month)
     for i,row in schedule.iterrows(): 
         if row.Date2 == (datetime.now() - timedelta(1)).strftime('%Y-%m-%d'):
             # scrape play by play
-            df = scrape_and_clean_game(row.Date2, row.Visitor, row.Home)
+            df = scrape_and_clean_game(row.Date2, row.Visitor, row.Home, year)
             # add game to database
-            save_to_rds(df)
+            save_to_sqlite(df, season)
             # sleep; time on basketballreference.com/robots is 3 seconds
-            print("Sleeping for 3 seconds...")
+            print("Sleeping...")
             time.sleep(3)
     print("Finished.")
 
